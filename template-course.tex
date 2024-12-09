@@ -1,0 +1,1544 @@
+\documentclass[a4paper,10pt,openany, oneside]{book}
+
+% set your chapter number and title
+\setcounter{chapter}{4}
+\newcommand{\chaptertitle}{Self-Stabilizing Algorithms for Overlay Networks}
+
+\usepackage{fancyhdr}   % For custom headers and footers
+\pagestyle{fancy}       % Enable custom headers and footers
+\fancyhf{}              % Clear all header and footer fields
+\fancyfoot[C]{\thepage} % Center the page number in the footer
+\fancyhead[C]{Chapter \arabic{chapter} : \chaptertitle} % Center the page number in the footer
+
+
+\newcommand{\mode}{script}
+\RequirePackage{ifthen} % for \mode case distinction
+
+\usepackage[normalem]{ulem}
+\usepackage{hyperref}
+
+\usepackage[T1]{fontenc}
+
+\usepackage{comment}
+\usepackage{latexsym}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{mathtools}
+\usepackage{mathabx}
+\usepackage{booktabs}
+\usepackage{csquotes}
+
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{epsfig}
+\usepackage{subcaption}
+\usepackage{tabls}
+%\usepackage{2in1}
+\usepackage{needspace}
+%\usepackage{url}
+
+\usepackage[usenames]{color}
+\usepackage{fancybox}
+\usepackage{pifont}
+
+\usepackage{epstopdf}
+
+
+\usepackage{multirow}
+\usepackage{tikz}
+
+\usepackage{todonotes}
+
+
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{claim}[theorem]{Claim}
+\newtheorem{facts}[theorem]{Facts}
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{definition}[theorem]{Definition}
+\newtheorem{problem}[theorem]{Problem}
+\newtheorem{assumption}[theorem]{Assumption}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{model}[theorem]{Model}
+\newtheorem{protocol}[theorem]{Protocol}
+\newtheorem{customAlgo}[theorem]{Algorithm}
+\newtheorem{condition}{Condition}[chapter]
+
+
+
+
+\newcounter{common} % Create counter ``common''
+
+\makeatletter
+\let\c@theorem\relax % drop existing counter ``theorem'' (you might not need this)
+\let\c@algorithm\relax % drop existing counter ``theorem'' (you might not need this)
+\let\c@figure\relax % drop existing counter ``figure'' (you might not need this)
+\let\c@table\relax % drop existing counter ``figure'' (you might not need this)
+\makeatother
+
+\usepackage{aliascnt}
+\newaliascnt{theorem}{common} % let ``theorem'' be an alias for ``common''
+\newaliascnt{algorithm}{common} % let ``algorithm'' be an alias for ``common''
+
+\newaliascnt{figure}{common} % let ``figure'' be an alias for ``common''
+
+\newaliascnt{table}{common} % let ``figure'' be an alias for ``common''
+
+\renewcommand{\thealgorithm}{\arabic{chapter}.\arabic{algorithm}}
+\renewcommand{\thetheorem}{\arabic{chapter}.\arabic{theorem}}
+\renewcommand{\thefigure}{\arabic{chapter}.\arabic{figure}}
+
+\renewcommand{\thetable}{\arabic{chapter}.\arabic{table}}
+\newcommand*{\among}[2]{\left(#1 \atop #2\right)}
+
+%% Counter equalizing ends
+
+%%locality lower bounds commands
+
+%args: node label, neighbor 1 label, neighbor 2 label
+\newcommand\Twoneighbors[3]{
+    \begin{tikzpicture}
+		\node[draw, inner sep=2pt, circle, minimum size=2mm] at (0,0) (A) {$#1$};
+		\node[inner sep=1pt, minimum size=2mm] at (1,0) (B) {$#2$};
+		\node[inner sep=1pt, minimum size=2mm] at (0,-1) (C) {$#3$};
+		
+		\path[-]
+			(A) edge (B)
+			(A) edge (C);
+    \end{tikzpicture}
+}
+
+%args: node label, neighbor 1 label, neighbor 2 label, neighbor 3 label
+\newcommand\Threeneighbors[4]{
+    \begin{tikzpicture}
+		\node[draw, inner sep=2pt, circle, minimum size=2mm] at (0,0) (A) {$#1$};
+		\node[inner sep=1pt, minimum size=2mm] at (1,0) (B) {$#2$};
+		\node[inner sep=1pt, minimum size=2mm] at (0,-1) (C) {$#3$};
+		\node[inner sep=1pt, minimum size=2mm] at (1,-1) (D) {$#4$};
+		
+		\path[-]
+			(A) edge (B)
+			(A) edge (C)
+			(A) edge (D);
+    \end{tikzpicture}
+}
+
+\tikzset{
+	bicolorbordered/.style n args={4}{
+ 		postaction={draw,double distance=0.1mm,#2,dashed,dash pattern=on 8pt
+ 		off 10pt,dash phase=0pt},
+		postaction={draw,line width=0.3mm,dashed,dash pattern=on 8pt off 10pt,-,#1,dash phase=0pt},
+ 		postaction={draw,double distance=0.1mm,#4,dashed,dash pattern=on 8pt
+ 		off 10pt,dash phase=9pt},
+		postaction={draw,line width=0.3mm,dashed,dash pattern=on 8pt off 10pt,-,#3,dash phase=9pt},
+	}
+}
+
+\tikzset{
+	borderedline/.style n args={2}{
+ 		postaction={draw,double distance=0.1mm,#2},
+		postaction={draw,line width=0.3mm,-,#1},
+	}
+}
+
+\tikzset{pkt/.style={draw,rectangle,fill=gray!15,minimum height=25pt,align=center,font=\footnotesize}}
+\tikzset{pktlen/.style={above=-2pt,font=\scriptsize}}
+\usetikzlibrary{calc}
+\usetikzlibrary{patterns}
+\usetikzlibrary{decorations.pathreplacing}
+\usetikzlibrary{er}
+\usetikzlibrary{shapes}
+\usetikzlibrary{shapes.multipart}
+\usetikzlibrary{arrows}
+\usetikzlibrary{automata,positioning}
+\usetikzlibrary{shapes.geometric, arrows.meta}
+\usepackage[outline]{contour}
+
+
+% \tikzset{
+% 	tricolor/.style n args={3}{
+% 	  postaction={draw,line width=0.4mm,dashed,dash pattern=on 8pt off 19pt,-,#1,dash phase=0pt},
+% 	  postaction={draw,line width=0.4mm,dashed,dash pattern=on 8pt off 19pt,-,#2,dash phase=9pt},
+% 	  postaction={draw,line width=0.4mm,dashed,dash pattern=on 8pt off 19pt,-,#3,dash phase=18pt}
+% 	  }
+% }
+
+%%locality lower bounds ends
+
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\E}{\mathbb{E}}
+%\newcommand{\bigO}{\mathcal{O}}
+\newcommand{\hide}[1]{}
+
+% New commands:
+\newcommand{\fancyschmancy}[3]{\noindent\shadowbox{\color{Gray}\begin{minipage}{0.95\textwidth}\color{black}\begin{#1}[#2] #3\end{#1}
+\end{minipage}}}
+
+\newcommand{\rmk}[1]{\noindent\colorbox{Gray}{
+\begin{minipage}{\textwidth}
+\begin{remarks}#1\end{remarks}
+\end{minipage}}
+}
+
+
+%\renewcommand{\vec}[1]{\#1}
+
+\renewcommand{\algorithmicloop}{\textbf{do atomically}}
+\renewcommand{\algorithmicendloop}{\textbf{end do}}
+
+
+\newcommand{\comments}[2]{\marginpar{\tiny{\textbf{#1: }\textit{#2}}}}
+\newcommand{\notesmargin}[1]{\comments{Notes}{#1}}
+
+\newcommand{\sidenote}[1]{\ifthenelse{\boolean{shownotes}}
+{\notesmargin {#1}}{}}
+
+%\newcommand{\yes}{yes}
+%\newcommand{\no}{no}
+\newcommand{\yes}{\hspace{1pt}\ding{52}}
+\newcommand{\no}{\hspace{1pt}\ding{55}}
+
+
+\usepackage{ifthen}
+\newboolean{shownotes}
+
+% Hier kann man mit true oder false angeben, ob die
+% Notes gedruckt werden sollen oder nicht:
+\setboolean{shownotes}{false}
+
+\newcommand{\notes}[1]{\ifthenelse{\boolean{shownotes}}
+{\noindent\textbf{\textsf{Notes:}} #1}{}}
+
+% Definiert max. und min. Platz vor remarks
+\usepackage{enumitem}
+\newlength{\remarkskip}
+
+\setlength{\remarkskip}{1ex plus0.3ex minus0.3ex}
+
+% Definiert remarks-environment; optionales Argument erlaubt den Defaulttext
+% ''Remarks:'' zu aendern; verhaelt sich im Moment wie eine itemize-Umgebung,
+% wobei \needspace einen Seitenumbruch unmittelbar nach ''Remarks:'' verhindert.
+
+\newenvironment{remarks}[1][Remarks]{\vspace{\remarkskip}
+\needspace{3\baselineskip}
+\noindent\textbf{#1:}\begin{itemize}[leftmargin=1.5cm]}{\end{itemize}}
+
+\hyphenation{dis-trib-ut-ed dro-soph-i-la drop-ped asyn-chro-nous
+log-a-rith-mic Dijkstra}
+
+% Definitions used in dynnetworks.tex
+\usepackage[algo2e,boxed]{algorithm2e}
+\newcommand{\msg}[2]{{\normalfont \texttt{#1}\ifthenelse{\equal{#2}{}}{}{(#2)}}}
+\newcommand{\stage}[1]{\item[] \vspace{0.6em} \emph{#1} \vspace{0.6em}}
+\newcommand{\algonote}[1]{\hspace{#1}$\triangleleft$}
+
+\DeclareMathOperator{\tdist}{tdist}
+\DeclareMathOperator{\shift}{shift}
+\newcommand{\powerset}[1]{\mathcal{P}\left( #1 \right)}
+\renewcommand{\vec}[1]{\underline{#1}}
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\norm}[1]{\lVert #1 \rVert}
+\newcommand{\st}{\medspace | \medspace}
+% \newcommand{\coloneq}{:=}
+\newcommand{\nat}{\mathbb{N}}
+%\newcommand{\Vv}{V^{(2)}}
+\newcommand{\Vv}{{V\choose 2}}
+\newcommand{\MSG}{\mathit{MSG}}
+\newcommand{\self}{\mathit{self}}
+\newcommand{\var}[1]{\mathit{#1}}
+\newcommand{\leader}{\mathit{leader}}
+\newcommand{\committee}{\mathit{committee}}
+\newcommand{\cost}{\mathit{cost}}
+\newcommand{\acost}{\mathit{acost}}
+\def\R{{\sf I\hspace*{-1pt}R}}
+\def\OPT{{\rm OPT}}
+
+\providecommand\given{}
+\newcommand\SetSymbol[1][]{%
+  \nonscript\:#1\vert
+  \allowbreak
+  \nonscript
+  \:\mathopen{}}
+
+\DeclarePairedDelimiterX\set[1]\{\}{%
+  \renewcommand\given{\SetSymbol[\delimsize]}
+  #1
+}
+
+
+%%%%% for failover chapter %%%%%
+\usepackage{xcolor}
+\usepackage{cancel}
+\usepackage{pifont}
+
+%%%%% end failover chapter %%%%%
+
+
+%Here come definitions from Jukka's part. Some of them we should keep, and some we should adjust to our format
+\newcommand{\PN}{PN}
+\newcommand{\tPN}{PN}
+\newcommand{\mydash}{\allowbreak\textemdash\allowbreak}
+\newcommand{\Set}[1]{\{\, #1 \,\}}
+\newcommand{\bigSet}[1]{\bigl\{\, #1 \,\bigr\}}
+\newcommand{\NN}{\mathbb{N}}
+\newcommand{\calF}{\mathcal{F}}
+\newcommand{\NNpos}{\mathbb{Z}^+}
+
+\newcommand{\func}[2]{{#1}\!\left(#2\right)}
+\newcommand{\funcrm}[2]{\mathrm{#1}\!\left(#2\right)}
+%\newcommand{\dist}[1]{\func{c_d}{#1}}
+\newcommand{\energy}[1]{\func{c_E}{#1}}
+\newcommand{\link}[1]{\func{c_\ell}{#1}}
+\newcommand{\bigO}[1]{\funcrm{O}{#1}}
+\newcommand{\mind}{d_0}
+\newcommand{\omegamodel}{$\mathrm\Omega(1)$-model}
+
+
+
+\DeclareMathOperator{\Input}{Input}
+\DeclareMathOperator{\Output}{Output}
+\DeclareMathOperator{\States}{States}
+\DeclareMathOperator{\Msg}{Msg}
+\DeclareMathOperator{\Init}{init}
+\DeclareMathOperator{\Send}{send}
+\DeclareMathOperator{\Receive}{receive}
+\DeclareMathOperator{\Id}{id}
+\newcommand{\algtoprule}{\rule{\columnwidth}{\heavyrulewidth}{}}
+\newcommand{\algbottomrule}{\rule[1ex]{\columnwidth}{\heavyrulewidth}{}}
+\newlist{descriptionb}{description}{1}
+\setlist[descriptionb]{font=\normalfont\itshape,leftmargin=0pt,itemsep=1ex,style=unboxed}
+% Algorithmic: atomically
+\makeatletter
+\AtBeginEnvironment{algorithmic}{%
+  \newcommand{\algorithmicupon}{\textbf{upon}}
+  \newcommand{\UPON}[2][default]{\ALC@it\algorithmicupon\ #2:\ %
+    \begin{ALC@upon}}%
+  \newcommand{\algorithmicendupon}{\algorithmicend\ \algorithmicupon}
+  \newenvironment{ALC@upon}{\begin{ALC@g}}{\end{ALC@g}}
+  \newcommand{\ENDUPON}{\end{ALC@upon}\ALC@it\algorithmicendupon}
+}
+
+%---- Figures ----
+
+\newcounter{myexternalpagenum}
+\newcommand{\definepage}[1]{\stepcounter{myexternalpagenum}\edef#1{\arabic{myexternalpagenum}}}
+% \input{figlist.tex}
+
+
+\newcommand{\mysf}[1]{\textup{\sffamily #1}}
+\newcommand{\state}[1]{\mysf{#1}}
+
+\newcommand{\longref}[2]{\ref{#2}}
+
+
+\usepackage[sectionbib]{natbib}
+\usepackage{chapterbib}
+
+% use wrapfigure for narrow images
+\usepackage{wrapfig}
+
+% Use this to compile only single chapters
+
+
+
+% % INCLUDEONLY %
+% % INCLUDEONLY % % a good start
+% % INCLUDEONLY % % must come early! always fix the first 3 weeks.
+% % INCLUDEONLY % % some basic definitions
+% % INCLUDEONLY % % different model
+% % INCLUDEONLY % % different model
+
+% % INCLUDEONLY % % very much movable!
+ % % INCLUDEONLY % % randomization?
+% % INCLUDEONLY % % first tough lower bound?
+% % INCLUDEONLY % % different model
+% % INCLUDEONLY % % maybe the first example of randomization?
+% % INCLUDEONLY % % different view
+% % INCLUDEONLY % % hard problems (late)
+
+% % INCLUDEONLY % % different view
+% % INCLUDEONLY %
+
+% \includeonly{p2p} % practice, finally.
+% \includeonly{dynnetworks}
+% \includeonly{all2all}
+% 
+% 
+% \includeonly{consensus} % schon im kernfach
+% \includeonly{multicore} % todo: was soll man hier genau machen? eher in verteilten systemen?
+% \includeonly{dominating}
+% \includeonly{routing}
+% \includeonly{routing2}
+
+% keep the following line if you want to use build-all.sh
+% INCLUDEONLY %
+
+\begin{document}
+
+
+
+
+
+
+\pagenumbering{arabic}
+% \include{titlepage}
+
+% \pagenumbering{roman}
+% \setcounter{tocdepth}{1}
+% \tableofcontents
+
+% \cleardoublepage
+
+%Uncomment TOC for final "book" version
+% \tableofcontents
+
+
+\mainmatter
+
+
+
+% \pagenumbering{arabic}
+% forces the new pages to start on even page nmbers according to the arabic numbering
+% thus on odd pages in real life, i.e., the right side
+% \makeatletter
+% \renewcommand*\cleardoublepage{\clearpage\if@twoside
+%   \ifodd\c@page \hbox{}\newpage\if@twocolumn\hbox{}%
+%   \newpage\fi\fi\fi}
+% \makeatother
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+\chapter{\chaptertitle}
+\label{cha:self_stabilizing_algorithms}
+
+Besides efficiency, fault-tolerance is arguably one of the 
+most important requirements of large-scale overlay networks. 
+At large scale, and when operating for long time periods, the
+probability of even unlikely failures becomes substantial.
+In particular, the assumption that all peers leave the network
+gracefully, executing a pre-defined {\sc Leave} protocol, seems
+unrealistic.
+Rather, many peers are likely to leave unexpectedly (e.g., crash). 
+The situation becomes worse if the peer-to-peer system is under
+attack.\\
+
+
+% Intuitively, the larger and hence more popular the peer-to-peer system, 
+% the more attractive it also becomes for attackers. 
+% For example, Denial-of-Service (DoS) attacks or partitions of the underlying
+% physical network may push the overlay network into an undesired state. 
+% Also other kinds of unexpected and uncooperative behaviors may emerge
+% in large-scale networks with open membership,
+% such as selfish peers aiming to obtain an unfair share of the resources.
+
+% It is hence difficult in practice to rely on certain invariants and assumptions 
+% on what can and what cannot happen during the (possibly very long) lifetime of a 
+% peer-to-peer system. Accordingly, it is important that a distributed overlay 
+% network be able to recover from unexpected or even \emph{arbitrary} situations.  
+% This recovery should also be quick: 
+% once in an illegal state, the 
+% overlay network may be more vulnerable to further changes or attacks. 
+% This motivates the study of self-stabilizing peer-to-peer systems.
+
+% Self-stabilzation is a very powerful concept in fault-tolerance.
+A self-stabilizing algorithm guarantees to ``eventually'' converge to a desirable system state \emph{from any initial configuration}.
+Indeed, a self-stabilizing system allows to survive arbitrary
+failures, beyond Byzantine failures, including for instance a total
+wipe out of volatile memory at all nodes.
+Once the external or even adversarial changes stop, the system will
+simply ``self-heal'' and converge to a correct state.\\
+
+% In this chapter, we will study self-stabilizing algorithms for overlay
+% networks, in the same framework as in Chapter
+% \ref{cha:peer_to_peer_networks} on peer-to-peer networks.
+
+
+
+% The idea of self-stabilization in distributed computing first appeared in a classical paper by E.W. Dijkstra
+% in 1974~\cite{self-stab-di}, which considered the problem of  designing a self-stabilizing token ring. Since Dijkstra's paper, self-stabilization has been studied in many contexts, including communication protocols, graph theory problems, termination detection, clock synchronization, and fault containment~\cite{shlomi-book}. 
+
+% In general, the design of self-stabilizing algorithms is fairly well-understood
+% today. In particular, 
+% already in the late 1980s, very powerful results have been obtained
+% on how any synchronous, not fault-tolerant local network algorithm can be transformed into a very robust, self-stabilizing algorithm which performs well both in synchronous and asynchronous environments~\cite{awerbuch1,awerbuch2,roger}. 
+% These transformations rely on synchronizers 
+% and on the (continuous) emulation of
+% one-shot local network algorithms.
+
+% While these transformations are attractive to strengthen the robustness of local algorithms \emph{on a given network topology},  e.g., for designing self-stabilizing spanning trees, they are not applicable, or only applicable at high costs, in overlay peer-to-peer networks whose topology is subject to change and optimization itself. 
+
+% Indeed, many decentralized overlay networks (including very well-known examples like Chord) are not self-stabilizing, in the sense that the proposed protocols only manage to recover the network from a restricted class of illegal states~\cite{jacm1,jacm2,jacm3}. 
+
+\section{Definitions}
+
+\begin{definition}[Node State]
+  \label{def:node_state}
+  At a given time, the state of a node includes all variable
+  information stored at the node, excluding the messages in
+  transit.
+\end{definition}
+
+
+\begin{definition}[Node Action]
+  \label{def:node_action}
+  A node action is a local computation performed by a node that changes the node's state.
+  A local computation is a computation that involves only the node's state and the state of its neighbors.
+\end{definition}
+
+% \begin{definition}[Network State]
+%   \label{def:network_state}
+%   At a given time, the network state includes all messages currently
+%   in transit.
+% \end{definition}
+
+\begin{definition}[System State]
+  \label{def:system_state}
+  % At a given time, the system state is the state of all nodes plus the network state.
+  At a given time, the system state is the state of all nodes.
+\end{definition}
+
+\begin{definition}[Fair scheduler]
+  A scheduler determines the order in which the node actions are performed across the network.
+  We say that a scheduler is \emph{fair} if any enabled node action will eventually be executed.
+\end{definition}
+
+\begin{definition}[Legal State]
+  \label{def:legal_state}
+  Let $\mathcal{S}$ be the set of all system states, we call $L(\mathcal{S}) \subseteq \mathcal{S}$ the set of \emph{legal} states.
+  % Let $L : \mathcal{S} \mapsto \mathcal{S}$ be a function.
+  % Assume that a network $P$ is in a state $S \in \mathcal{S}$ at a
+  % given time, and that no failure or external error will ever occur.
+  % We say that a later network state $S ^{\prime}$ is \emph{legal} with
+  % respect to $S$ if $S ^{\prime} \in L(S)$.
+\end{definition}
+
+
+
+\begin{definition}[Self-Stabilization]
+  \label{def:self-stabilization}
+  A system is self-stabilizing with respect to a given set of states $\mathcal{S}$ and legal states $L(\mathcal{S})$, if the following requirements are fulfilled when no failure or external error occurs and if the graph stops changing:
+  \begin{itemize}
+  \item \emph{Convergence:}
+    For all initial states $S$ and all fair executions, the system eventually reaches a legal state $S'$ with $S'\in L(\mathcal{S})$.
+
+  \item \emph{Closure:}
+    For all legal initial states $S$, also each subsequent state is legal.
+  \end{itemize}
+\end{definition}
+
+\begin{remarks}
+  \item
+    A topological self-stabilizing mechanism must guarantee
+    \emph{convergence} and \emph{closure} properties: by local
+    neighborhood changes (i.e., by creating, forwarding and deleting
+    links with neighboring nodes), the nodes will eventually form an
+    overlay topology with desirable properties (e.g., polylogarithmic
+    degree and diameter) from any initial topology.
+    The system will also stay in a desirable configuration provided
+    that no further external topological changes occur.
+  \item
+    The self-stabilizing overlay network design problem involves an adversary which can add, remove or change any node or link in the overlay network.
+  \item
+    As soon as the adversary stops manipulating the overlay
+    topology, say at some unknown time $t_0$, the self-stabilization
+    protocols will ensure that eventually, and in the absence of
+    further adversarial changes, a desired topology is reached.
+  \item
+    In order for a distributed self-stabilizing algorithm to recover
+    any connected topology, the initial topology must at least be
+    \emph{weakly connected}.
+  \end{remarks}
+
+
+  % \begin{remarks}
+  % \item \julien{already said below}
+  %   A topologically self-stabilizing algorithm can never cut
+  %   a path between two nodes: it may happen that this path is the
+  %   only connection between two otherwise disconnected components.
+  %   Once the network is disconnected, connectivity can never be
+  %   established again.
+
+  % \item
+  %   We assume that all the network topology that we discuss in this
+  %   chapter are at least weakly connected.
+
+  % \item
+  %   We want to be able to move the network topology from any
+  %   topology to any other topology.
+  %   It may seem impossible since we cannot remove edges.
+    
+  % \end{remarks}
+
+
+
+  
+\begin{condition} \label{conn}
+  We require that the network eventually becomes weakly connected, even for a short period of time.
+  We call $t_0$ the time when the network becomes weakly connected.
+% At $t_0$, the peers are weakly connected to each other.
+\end{condition}
+
+\begin{remarks}
+\item
+  The time $t_0$ when the network becomes weakly connected is not known.
+  A self-stabilizing algorithm must therefore run continuously and constantly check for inconsistencies.
+\item 
+  A topologically self-stabilizing algorithm can never remove a link without creating new ones: It may happen that this link is the only link connecting two otherwise disconnected components.
+
+\item
+  A self-stabilizing algorithm must still be able to move from any topology to any other topology, which clearly involves edge deletion.
+  The solution is to locally ``move'' edges by changing its endpoints in an atomic manner.
+
+\item
+  Another fundamental implication of the self-stabilization concept is that self-stabilizing algorithms cannot cycle through multiple stages during their execution.
+  For instance, it may be tempting to try to design an algorithm which, given the initial weakly-connected connected topology, first converts the topology into a clique graph, a ``full-mesh''; once in the clique state, any desirable target topology could be achieved efficiently, simply be removing (i.e., merging) unnecessary links.
+  The problem with this strategy is twofold:
+  \begin{enumerate} 
+  \item
+    Self-stabilizing algorithms can never assume a given stage of the stabilization has been reached, and based on this assumption, move into a different mode of stabilization.
+    The problem is that this assumption can be violated anytime by the adversary, ruining the invariant and hence correctness of the stabilization algorithm. 
+  \item
+    The \emph{transient} properties of the dynamic topology, i.e., the topological properties during convergence, may be undesirable: even though the initial and the final peer degrees may be low, the intermediate clique topology has a linear degree and hence does not scale. 
+  \end{enumerate} 
+
+  
+\end{remarks}
+
+% \julien{I dont get this!!}
+% Designing a topological self-stabilizing algorithm is non-trivial for several reasons.
+% First, as the time $t_0$ is not known to the self-stabilizing algorithm, the self-stabilizing procedure must run continuously, respectively, \emph{local detectability} is required: \emph{at least one peer should notice (i.e., locally detect) an inconsistency}, if it exists.
+% This peer can then trigger (local or global) convergence.
+% Moreover, a key insight is that a topologically self-stabilizing algorithm can never remove links: it may happen that this link is the only link connecting two otherwise disconnected components.
+% Clearly, once disconnected, connectivity can never be established again.
+% Now one may wonder how a self-stabilizing algorithm starting (at $t_0$) from a super-graph of the target topology will ever be able to reach the desired topology without edge deletion.
+% The answer is simple: while an edge cannot be removed, it can be \emph{moved} resp.~\emph{delegated} (e.g., one or both of its endpoints can be forwarded to neighboring peers) and \emph{merged} (with parallel edges).
+
+% Another fundamental implication of the self-stabilization concept is that self-stabilizing algorithms cannot cycle through multiple stages during their execution.
+% For instance, it may be tempting to try to design an algorithm which, given the initial weakly connected topology, first converts the topology into a clique graph, a ``full-mesh''; once in the clique state, any desirable target topology could be achieved efficiently, simply be removing (i.e., merging) unnecessary links.
+% The problem with this strategy is twofold:
+% \begin{enumerate} 
+% \item Self-stabilizing algorithms can never assume a given stage of the stabilization has been reached, and based on this assumption, move into a different mode of stabilization. The problem is that this assumption can be violated anytime by the adversary, ruining the invariant and hence correctness of the stabilization algorithm. 
+%  \item The \emph{transient} properties of the dynamic topology, i.e., the topological properties during convergence, may be undesirable: even though the initial and the final peer degrees may be low, the intermediate clique topology has a linear degree and hence does not scale. 
+% \end{enumerate} 
+
+% Given these intuitions, we will next identify 
+% fundamental connectivity primitives and
+% topological operations which are sufficient and necessary to transform
+% any initial network into any other network.
+% Subsequently, we will discuss how these primitives can be
+% exploited systematically for the design of distributed algorithms.
+% Finally, we present two case studies for topological self-stabilization:
+% self-stabilizing linearization and the self-stabilizing construction of
+% skip graphs.
+
+% \subsection{Universal Primitives for Reliable Connectivity}
+
+% \begin{definition}[Link]
+%   A directed \emph{link} $(u,v)$ means that $u$ knows $v$.
+% \end{definition}
+
+% % This section identifies \emph{universal connectivity primitives}: local graph operations which allow us to transform any topology into any other topology. 
+% % While we in this section focus on feasibility, we will later use these primitives to design topologically self-stabilizing algorithms. 
+
+% % Let us first define the notion of links $(u,v)$.
+% % Links can either be explicit or implicit.
+% % An explicit link $(u,v)$ (in the following depicted as solid line) means that $u$ knows $v$, i.e., $u$ stores a reference of $v$ (e.g., $v$'s IP address).
+% % An implicit link $(u,v)$ (depicted as dashed line) means that a message including $v$'s reference is currently in transit to $u$ (from some arbitrary sender).
+% % We are often interested in the union of the two kinds of links.
+
+% % As discussed above, a first most fundamental principle in the design of distributed self-stabilizing algorithms is that links can never be deleted:
+
+% % \begin{rulex}
+% % During the execution of a topologically self-stabilizing algorithm,
+% % weak connectivity must always be preserved. In particular, a pointer
+% % (i.e., information about a peer) can never be deleted.
+% % \end{rulex}
+
+
+% \begin{definition}[Connectivity Primitives]
+%   \label{def:connectivity_primitives}
+% We identify four basic primitives which preserve connectivity (cf.~Figure~\ref{fig:primitives}):
+% % \textsc{Introduce}, 
+% % \textsc{Forward},
+% % \textsc{Merge},
+% % \textsc{Invert}.
+
+% \begin{enumerate}
+% \item
+%   \textsc{Introduce}: Assume node $u$ has a pointer to nodes $v$ and $w$: there are two directed links $(u,v)$ and $(u,w)$.
+%   Then, $u$ can introduce $w$ to $v$ by sending the pointer to $w$ to $v$. 
+
+% \item
+%   \textsc{Forward}: Assume node $u$ has a pointer to nodes $v$ and $w$.
+%   Then, $u$ can send the pointer to $w$ to $v$ and delete the reference to $w$.
+
+% \item
+%   \textsc{Merge}: If $u$ has two pointers to $v$, i.e., $(u,v)$ and $(u,v)$, then $u$ can merge the two.
+
+% \item
+%   \textsc{Invert}: If $u$ is connected to $v$, it can invert the link $(u,v)$ to $(v,u)$ by forwarding a pointer to itself to $v$, and delete the 
+% reference to $v$.
+% \end{enumerate}
+
+  
+% \end{definition}
+
+
+
+% \begin{figure}[H]
+% \begin{center}
+% %\epsfig{figure=decompose.eps,width=.60\textwidth}
+% \includegraphics[width=0.79\textwidth]{primitives}\\
+% \end{center}
+% \caption{Basic connectivity primitives.} \label{fig:primitives}
+% \end{figure}
+
+
+% \begin{remarks}
+% \item
+%   Those primitives preserve connectivity.
+%   The \textsc{Introduce}, \textsc{Forward}, and \textsc{Merge} operations even preserve strong connectivity.
+% % \item
+% %   In the following, we first show that three of them are sufficient to transform any weakly connected graph into any strongly connected graph.
+% %   In other words, they are  \emph{weakly universal}.
+% % \item
+% %   Subsequently, we show that all four of them together are even \emph{universal}: they are sufficient to transform any weakly connected graph into any weakly connected graph.
+% \end{remarks}
+
+% % It is easy to see that these primitives indeed preserve weak connectivity.
+% % In fact, the \textsc{Introduce}, \textsc{Forward}, and \textsc{Merge} operations even preserve strong connectivity.
+% % We also note that we need a compare operation to implement the merge operation: namely, we need to be able to test whether
+% % two references point to the same node.
+
+% % These operations turn out to be very powerful.
+% % In the following, we first show that three of them are sufficient to transform any weakly connected graph into any strongly connected graph.
+% % In other words, they are  \emph{weakly universal}.
+% % Subsequently, we show that all four of them together are even \emph{universal}: they are sufficient to transform any weakly connected graph into any weakly connected graph.
+% % Finally, we prove that these primitives are also necessary.
+
+% \begin{theorem}\label{thm:wuniversal}
+% The three primitives \textsc{Introduce}, \textsc{Forward}, and \textsc{Merge} are \emph{weakly universal}: they are sufficient to turn any weakly connected graph $G=(V,E)$ into any strongly connected graph $G'=(V,E')$.
+% \end{theorem}
+
+% \begin{proof}
+% Let us provide some intuition why this theorem is true.
+% Note that we only need to prove feasibility, i.e., that a transformation exists; how to devise a distributed algorithm that finds such a transformation is only discussed later in this chapter.
+
+% The proof proceeds in two stages, from $G=(V,E)$ to the clique, and from the clique to $G'=(V,E')$.
+% From the definition of weak connectivity, it follows that for any two nodes $v$ and $w$, there is a path from $v$ to $w$ (ignoring link directions).
+% It is easy to see that if in each communication round, each node introduces its neighbors to each other as well as itself to its neighbors, we reach a complete network (the clique) after $O(\log{n})$ communication rounds.
+
+% So now assume $G=(V,E)$ is a clique. 
+% Then using \textsc{Forward} and \textsc{Merge}  operations, we can transform $G$ into $G'$ using the following steps (without removing edges in $G'$):
+
+% \begin{enumerate}
+% \item Let $(u,w)$ be an arbitrary edge which
+% needs to be removed, i.e., $(u,w)\not\in E'$.
+% Since $G'=(V,E')$ is strongly connected, 
+% there is a shortest directed path
+% from $u$ to $w$ in $G'$. Let 
+% $v$ be the next node along this path. 
+
+% \item Node $u$ forwards (``delegates'') 
+% $(u,w)$ to $v$, i.e., $(u,w)$ becomes $(v,w)$. 
+% This reduces the distance between an unused node
+% pair in $G'$ by 1. 
+
+% \item Since the maximal distance is $n-1$,
+% the distance of a superfluous edge
+% can be reduced at most $n-1$ many times before
+% it merges with an edge in $G'$.
+% Thus, we eventually obtain $G'$. 
+% \end{enumerate}
+% \end{proof}
+
+
+
+% \begin{theorem}\label{thm:universal}
+% The four primitives \textsc{Introduce}, 
+% \textsc{Forward}, 
+% \textsc{Merge}, and
+% \textsc{Invert}
+% are universal:
+% they are sufficient to turn any weakly connected graph $G=(V,E)$
+% into any weakly
+% connected graph $G'=(V,E')$.
+% \end{theorem}
+
+% We again provide some intuition for this theorem:
+% \begin{enumerate}
+
+% \item Let $G''=(V,E'')$ be the graph in which 
+% for each edge $(u,v)\in E'$, 
+% both edges $(u,v)$ and $(v,u)$ 
+% are in $E''$. Note that $G''$ 
+% is strongly connected. 
+
+% \item According to Theorem~\ref{thm:wuniversal},
+% it is possible to transform any $G$ to
+% $G''$. 
+
+% \item In order to transform $G''$ to $G'$,
+% we need the \textsc{Invert} primitive,
+% to remove undesired edges:
+% we invert any undesired edge $(u,v)$ to $(v,u)$
+% and then merge it with $(v,u)$. 
+% \end{enumerate}
+
+% Interestingly, the primitives are not only sufficient but
+% also necessary.
+
+% \begin{theorem}
+% The four primitives \textsc{Introduce}, 
+% \textsc{Forward}, 
+% \textsc{Merge}, and
+% \textsc{Invert}
+% are also necessary.
+% \end{theorem}
+
+% The reason is that
+% \textsc{Introduce} is the only primitive 
+% which generates an edge,
+% \textsc{Forward} is the only primitive which
+% separates a node pair,
+% \textsc{Merge} is the only primitive which
+% removes an edge, and 
+% \textsc{Inversion} is the only primitive
+% rendering a node unreachable. 
+
+
+% \subsection{Distributed Algorithms for Self-Stabilization}
+
+% In the previous section we have presented universal primitives 
+% that allow to transform any weakly-connected graph $G$ 
+% into any weakly-connected graph $G'$. 
+% However, the mere \emph{existence}
+% or \emph{feasibility} of such transformations
+% is often not interesting in practice, if there do
+% not exist efficient distributed algorithms
+% to find a transformation.
+
+% In the following, we will show how to devise 
+% distributed algorithms exploiting our
+% primitives to render systems truly self-stabilizing.
+% We first need to introduce some terminology.
+% We first differentiate between the following
+% notions of \emph{state}.
+
+% \begin{enumerate}
+
+% \item \emph{State of a process:} The state of a process
+% includes all variable information stored
+% at the process, excluding the messages in transit.
+
+% \item \emph{State of the network:} The network states
+% includes all messages currently
+% in transit. 
+
+% \item \emph{State of the system:} The system state is the
+% state of all proceses
+% plus the network state.
+
+% \end{enumerate}
+
+% Reformulating our objective accordingly, we aim to transition from any initial network state $S$ to a legal network state $S'(S)$. 
+% For the algorithm design, we usually assume node actions to be \emph{locally atomic}: at each moment in time, a process executes a single action. Multiple processes however may execute multiple actions simultaneously: actions are not globally atomic.
+% Moreover, it is usually assumed that the scheduler is fair: every enabled node action will eventually be executed. 
+
+% Concretely, we consider the following action types:
+% \begin{enumerate}
+% \item \emph{Name(Object-List) $\rightarrow$ Commands}:
+% \begin{enumerate}
+% \item A local call of action $A$ is executed
+% immediately. 
+% \item \emph{Incoming Request}: 
+% The corresponding action will eventually be scheduled
+% (the request never expires). 
+% \end{enumerate}
+
+% \item \emph{Name: Predicate $\rightarrow$ Commands}:
+% The rule will only be executed in finite time if the the predicate
+% is always enabled, e.g., the rule does not time out. 
+% \end{enumerate}
+
+% Independently of the initial states as well as
+% possible messages in transit, a self-stabilizing system
+% should fulfill the following crteria:
+
+% \begin{definition}
+% A system is self-stabilizing with respect to a given
+% network problem $P$,
+% if the following requirements are fulfilled when
+% no failure or external error occurs and if nodes are static: 
+% \item \emph{Convergence:}
+% For all initial states $S$ and all fair executions,
+% the system eventually reaches a state $S'$ with $S'\in L(S)$:
+% a legal state.
+
+% \item \emph{Closure:}
+% For all legal initial states $S$, also each subsequent state is legal.
+% \end{definition}
+
+% A central requirement in topologically
+% self-stabilizing system is the \emph{monotonicity of reachability}: 
+% if $v$ is reachable from $u$ at time $t$, using
+% explicit or implicit edges, then, if no further
+% failures or errors occur and given a static node set, 
+% $v$ is also reachable from $u$
+% at any time $t'>t$. 
+
+% The following theorem can easily
+% be proved using induction, as long as
+% there are no references to non-existent
+% nodes in the system.
+% \begin{theorem}\label{thm:monotonic}
+% The \textsc{Introduce}, 
+% \textsc{Forward}, 
+% and \textsc{Merge} operations fulfill
+% monotonic reachability. 
+% \end{theorem}
+
+% Remarks:
+% \begin{enumerate}
+% \item 
+% One particularly annoying challenge in the design of
+% self-stabilizing algorithms is due to the fact that 
+% there may still be corrupt messages in transit in the system.
+% Such messages can threaten the correctness of an algorithm
+% later. 
+
+% \item 
+% In particular, corrupted message may violate the closure property:
+% although initially in a legal state,
+% the system may move to an illegal state. 
+
+% \item 
+% The set of legal states is hence only a subset of
+% the ``correct states''. 
+% \end{enumerate}
+
+% In general, the following performance metrics are most relevant in topological self-stabilization: 
+% \begin{enumerate}
+% \item \emph{Convergence Time:} Assuming a synchronous environment
+% (or assuming an upper bound on the message transmission per link), 
+% the distributed convergence time measures 
+% how many (parallel) communication rounds are required until the final
+% topology is reached. 
+
+% \item \emph{Work:} The work measures how many
+% edges are inserted, changed, or removed in total, during the covergence
+% process. 
+
+% \item \emph{Locality:} While a self-stabilizing algorithm by definition
+% will re-establish a desired property from \emph{any} initial configuration,
+% it is desirable that the parallel convergence time as well as the overall
+% work is proportional to ``how far'' the initial topology is from the desired
+% one. In particular, if there are only one or two links missing, 
+% it should be possible to handle these situations  more efficiently
+% than performing a complete stabilization.
+% Similarly, single peer \textsc{Join} 
+% and \textsc{Leave} operations should be efficient
+% (in terms of time and work). 
+
+% \item \emph{Transient Behavior:} While the initial and the final
+% network topologies are given, it is desirable that during convergence, 
+% only efficient topologies transiently emerge. For example, it may be
+% desirable that no topology during convergence will have a higher degree
+% or diameter than the initial or the final topology.
+% \end{enumerate}
+
+% Usually, we do not assume synchronous executions 
+% or that nodes process requests at the same speed.
+% Rather, requests may be processed asynchronously.
+% In order to measure time in asynchronous
+% executions, we use the notion of a round:
+% in a round, each node which has to process
+% one or more requests, completed
+% at least one of these requests.
+% The time complexity is measured in
+% terms of number of rounds (usually
+% in the worst-case).
+
+% \subsubsection{Case Study Linearization}
+
+% Linearization is a most simple example for topological self-stabilization~\cite{tocs13,tcs12ss,concur16}: 
+% essentially, we are looking for a local-control strategy 
+% for converting an arbitrary connected graph (with unique node IDs) into a sorted list. 
+% In order to provide some intuition and for the sake of simplicity, let us assume an undirected network topology, where peers have unique identifiers.
+% In order to sort and linearize this overlay network in a distributed manner,
+% two basic rules are sufficient, defined over node triples (cf.~Figure~\ref{fig:linearize}): 
+% \begin{enumerate}
+% \item \emph{Linearize right:} Any node $u$ which currently has two neighbors $v,w$ with larger IDs than its own ID, i.e., $u<v<w$, introduces these  two nodes to each other, essentially forwarding the edge. That is, the edge $\{u,w\}$ is forwarded from $u$ to $v$ and becomes
+% edge $\{v,w\}$. 
+
+% \item \emph{Linearize left:} Any node $w$ which currently has two neighbors $u,v$ with lower IDs than its own ID, i.e., $u<v<w$, introduces these  two nodes to each other, essentially forwarding the edge. That is, the edge $\{u,w\}$ is forwarded from $w$ to $v$ and becomes
+% edge $\{u,v\}$. 
+% \end{enumerate}
+
+% \begin{figure}[ht]
+% \begin{center}
+% %\epsfig{figure=decompose.eps,width=.60\textwidth}
+% \includegraphics[width=0.59\textwidth]{linearize.pdf}\\
+% \end{center}
+% \caption{Linearize operations.}\label{fig:linearize}
+% \end{figure}
+
+% Note that the algorithm indeed does not remove any edges,
+% but only forwards and merges them.
+% It is fairly easy to see that connectivity is preserved:
+% if there is a path between $x$
+% and $y$ at time $t$, then there also exists a path between
+% the two nodes after the linearization step. 
+% In order to prove that the algorithm will eventually converge,
+% we can use a potential function argument.
+% First however we note
+% that if the network is in a configuration in which it does not
+% constitute the linear chain graph yet, then there must exist a node having
+% at least two left neighbors or at least two right neighbors. Accordingly, the
+% linearize left or linearize right rule is enabled and will continue to change the
+% topology in this step.
+% Now, to show eventual convergence to the unique legal configuration (the linear
+% graph), we will prove that after any execution of the linearize left or linearize
+% right rule, the topology will come closer to the linearized configuration, in
+% the following sense: We can define a potential function whose value is 
+% (strictly) monotonically decreased with each executed rule.
+% Consider the potential function that sums up the lengths (differences) 
+% of all existing links with respect to the linear ordering of the nodes. 
+% As the initial configuration is connected, this sum is at least $n-1$ 
+% ($n-1$ links of length 1). 
+% Whenever an action is executed (in our case: a linearization step is performed), the potential is reduced by at least the length of the shorter edge
+% in the linearization triple. Thus, we 
+% will eventually reach a topology of minimal potential, where all actions are disabled. 
+
+% \subsubsection{Case Study Skip Graphs}
+
+% The first self-stabilizing and scalable overlay network is SKIP$+$~\cite{jacm}, 
+% a self-stabilizing variant of the skip graph family~\cite{Aspnes2003,HJSTW03}.
+% Similarly to the original skip graphs, SKIP$+$ features a polylogarithmic
+% degree and diameter. However, in constrast to the original skip graph versions,
+% SKIP$+$ contains additional edges which enable \emph{local detectability}:
+% only with these edges it can be ensured that at least one peer will always notice,
+% locally,
+% if the overall network is not in the desired state yet.
+
+% SKIP$+$ distinguishes between stable edges and temporary edges. 
+% Similarly to the linearization example above, temporary edges
+% will travel through the topology (i.e., they are forwarded),
+% and eventually merge or stabilize. 
+% Node $v$ considers an
+% edge $(v,w)$ to be temporary if from v's point of view $(v,w)$ 
+% does not belong to SKIP$+$ and
+% so $v$ will try to forward it to some of its neighbors for which the edge would be more relevant.
+% Otherwise, $v$ considers $(v,w)$ to be a stable edge and will make sure that the connection is bidirected,
+% i.e., it will propose $(w, v)$ to $w$.
+
+% As many self-stabilizing algorithms, the self-stabilizing protocol for  SKIP$+$ is very simple:
+% the peers in  SKIP$+$ continuously must execute three rules:
+% \begin{enumerate}
+% \item \emph{Rule 1: Create Reverse Edges and
+% Introduce Stable Edges.}  This rule makes sure that
+% a directed edge becomes a bidirected edge, introducing
+% the peers to each other. Also, stable edges are created
+% where needed.
+
+% \item \emph{Rule 2: Forward Temporary Edges.} 
+% This rule is used for forwarding temporary edges to neighboring
+% nodes. Eventually, the edges will stabilize or merge.
+
+% \item \emph{Rule 3: Introduce All and Linearize.} 
+% The rule has two parts. It performs 
+% some kind of local transitive closure, where peers introduce
+% all their neighbors to each other. Moreover,
+% the rule is responsible for sorting neighboring nodes
+% according to their identifiers. (In a skip graph, nodes
+% are ordered on each level, facilitating search operations.)
+% \end{enumerate}
+
+% The three rules are continuously checked and executed 
+% in parallel by all nodes. However, while the algorithm itself is simple, 
+% its analysis is non-trivial.
+% In a nutshell, the stabilization proof is based on the observation
+% that the execution of the algorithm 
+% can be divided into phases in which certain properties (milestones)
+% are achieved. In particular, the execution can be thought of
+% being divided
+% into a bottom-up and a top-down phase.
+% The bottom-up phase (i.e., from skip graph 
+% level 0 upwards), connected components for increasingly larger prefixes
+% are formed in the identifier space. 
+% This will be accomplished by Rules 1 (where new nodes in the range
+% of a node are discovered and where ranges may be refined) and Rules 3 (where an efficient
+% variation of a local transitive closure is performed).
+% Once the connected components are formed, in the second phase of the algorithm 
+% (recall that the division into phases is a purely analytical one) will
+% form a sorted list out of each prefix component. 
+% This is accomplished in a top-down fashion by
+% merging the two already sorted subcomponents into a sorted
+% larger component until all
+% nodes in the bottom level form a sorted list.
+
+% In summary, Jacob et al.~\cite{jacm} show the following result.
+
+% \begin{theorem}
+% SKIP$+$ converges, for any initial state in which the nodes are weakly
+% connected, in $O(\log^2 n)$ rounds. 
+% A single join event (i.e., a new node connects to an arbitrary node in the system)
+% or leave event (i.e., a node just leaves without prior notice) can be handled 
+% with polylogarithmic work. 
+% \end{theorem}
+
+% One drawback of this approach however is its transient behavior:
+% it may happen that node degrees can increase significantly during
+% covergence (namely due to the Introduce All in Rule 3), 
+% even though the initial and the final topology
+% have low degrees, i.e., are scalable.
+
+% We conclude this section by emphasizing that the field
+% of topological self-stabilization is relatively young
+% and many algorithmic techniques and limitations still 
+% wait to be discovered.
+
+
+
+
+
+% % % \begin{definition}[link]
+% % %   Let us first define the notion of links $(u,v)$.
+% % %   Links can either be explicit or implicit.
+% % %   An explicit link $(u,v)$ (in the following depicted as solid line)
+% % %   means that $u$ knows $v$, i.e., $u$ stores a reference of $v$
+% % %   (e.g.,
+% % %   $v$'s IP address).
+% % %   An implicit link $(u,v)$ (depicted as dashed line) means that a
+% % %   message including $v$'s reference is currently in transit to $u$
+% % %   (from some arbitrary sender).
+% % %   We are often interested in the union of the two kinds of links.
+% % % \end{definition}
+
+% % % \begin{remarks}
+% % %   \item
+% % % This section identifies \emph{universal connectivity primitives}:
+% % % local graph operations which allow us to transform any topology into
+% % % any other topology.
+% % % While we in this section focus on feasibility, we will later use
+% % % these
+% % % primitives to design topologically self-stabilizing algorithms. 
+
+% % %   \item
+% % % Let us first define the notion of links $(u,v)$.
+% % % Links can either be explicit
+% % % or implicit. An explicit 
+% % % link $(u,v)$ (in the following depicted as solid line) means that
+% % % $u$ knows $v$, i.e., $u$ stores a reference
+% % % of $v$ (e.g., $v$'s IP address).
+% % % An implicit link $(u,v)$ (depicted as dashed line) means that 
+% % % a message including $v$'s reference is currently
+% % % in transit to $u$ (from some arbitrary sender). We are often
+% % % interested
+% % % in the union of the two kinds of links.
+
+% % % As discussed above, a first  
+% % % most fundamental principle in the design of 
+% % % distributed self-stabilizing 
+% % % algorithms
+% % % is that links can never be deleted:
+% % % \end{remarks}
+
+% % % \begin{rulex}
+% % % During the execution of a topologically self-stabilizing algorithm,
+% % % weak connectivity must always be preserved. In particular, a pointer
+% % % (i.e., information about a peer) can never be deleted.
+% % % \end{rulex}
+
+
+% % Besides efficiency, fault-tolerance is arguably one of the most
+% % important requirements of large-scale overlay networks. Indeed, at
+% % large scale and when operating for long time periods, the probability
+% % that even an unlikely failure event occurs may be subtantial. In
+% % particular, it is likely that not all peers leave the network
+% % gracefully; rather, many of them may leave unexpectedly (e.g., crash).
+% % The situation gets worse if the peer-to-peer system is under
+% % attack. Indeed, the larger and hence more popular the peer-to-peer
+% % system, the more attractive it may become as a target for
+% % attacks. Denial-of-Service (DoS) attacks or partitions of the
+% % underlying
+% % physical network may push the overlay network into some illegal
+% % state. But also other kinds of unexpected and uncooperative behaviors
+% % may emerge,
+% % such as selfish peers, e.g., aiming to obtain an unfair share of the
+% % resources.
+
+% % Thus, in practice, it is difficult to rely on certain invariants and
+% % assumptions on what can and what cannot happen during the (possibly
+% % very long) lifetime of a peer-to-peer system. It is therefore
+% % important that a distributed overlay network is able to recover from
+% % unexpected or even \emph{arbitrary} situations.
+% % Also, once in an illegal state, the overlay network may more easily
+% % get into a state in which it is even more vulnerable to further
+% % changes or attacks, and therefore, it is important to recover
+% % \emph{quickly}.
+
+% % Self-stabilzation is a very powerful concept in fault-tolerance.
+% % In a nutshell, a self-stabilizing algorithm guarantees to
+% % ``eventually'' converge to a desirable system state \emph{from any
+% %   initial configuration}.
+% % Indeed, a self-stabilizing system allows to survive arbitrary
+% % failures, beyond Byzantine failures, including for instance a total
+% % wipe out of volatile memory at all nodes. Once the external or even
+% % adversarial changes stop, the system will simply ``self-heal'' and
+% % converge to a correct state.
+% % The idea of self-stabilization in distributed computing first appeared
+% % in a classical paper by E.W. Dijkstra
+% % in 1974~\cite{self-stab-di}, which considered the problem of designing
+% % a self-stabilizing token ring. Since Dijkstra’s paper,
+% % self-stabilization has been studied in many contexts, including
+% % communication protocols, graph theory problems, termination detection,
+% % clock synchronization, and fault containment~\cite{shlomi-book}.
+
+% % In general, the design of self-stabilizing algorithms is fairly
+% % well-understood
+% % today. In particular, 
+% % already in the late 1980s, very powerful results have been obtained
+% % on how any synchronous, not fault-tolerant local network algorithm can
+% % be transformed into a very robust, self-stabilizing algorithm which
+% % performs well both in synchronous and asynchronous
+% % environments~\cite{roger,awerbuch1,awerbuch2}.
+% % In a nutshell, the transformation relies on synchronizers to make
+% % asynchronous systems synchronous, as well as an emulation of the
+% % one-shot local network algorithm to be executed in an infinite loop.
+
+% % While these transformations are attractive to strengthen the
+% % robustness of local algorithms \emph{on a given network topology},
+% % e.g., for designing self-stabilizing spanning trees, they are not
+% % applicable or only applicable at high costs, in overlay peer-to-peer
+% % networks whose topology is subject to change and optimization itself.
+
+% % Indeed, many decentralized overlay networks (including very well-known
+% % examples like Chord) are not self-stabilizing, in the sense that the
+% % proposed protocols only manage to recover the network from a
+% % restricted class of illegal states~\cite{jacm1,jacm2,jacm3}.
+% % Informally, the self-stabilizing overlay network design problem is the
+% % following:
+% % \begin{enumerate}
+% % \item An adversary can manipulate the peers' neighborhood (and hence
+% %   topology) information arbitrarily and continuously. In particular,
+% %   it can remove and add arbitrary nodes and links.
+
+% % \item As soon as the adversary stops manipulating the overlay
+% %   topology, say at some time $t_0$, the self-stabilization protocols
+% %   will ensure that eventually, and in the absence of further
+% %   adversarial changes, a desired topology is reached.
+% % \end{enumerate}
+
+
+% % \section{Topological Self-Stabilization}
+
+% % \begin{definition}[Self-Stabilizing algorithm]
+% %   A topological self-stabilizing mechanism must fulfill the following
+% %   properties:
+% %   \begin{enumerate}
+% %   \item \emph{Convergence Property:} By local neighborhood changes
+% %     (i.e., by creating, forwarding and deleting links with neighboring
+% %     nodes), the nodes will eventually form an overlay topology with
+% %     desirable properties (e.g., polylogarithmic degree and diameter)
+% %     from any initial topology.
+    
+% %   \item \emph{Closure Property:}  The system will also stay in a
+% %     correctness
+% %     configuration provided that no external topological changes occur.
+% %   \end{enumerate}
+% % \end{definition}
+
+
+% % \begin{condition} \label{conn}
+% % \
+% % At $t_0$, we assume that the peers are weakly connected to each other.
+% % \end{condition}
+
+% % \begin{remarks}
+% %   \item
+% %     The assumption that the initial topology is connected is the
+% %     fundamental minimal requirement to manage any topology in a
+% %     distributed manner, as no communication is possible between
+% %     disconnected components.
+% %   \item
+% %     To see why weakly connected is also sufficient, we note that a
+% %     peer can always use a directed edge to introduce itself to the
+% %     peer at the other end of the edge, essentially rendering the edge
+% %     bidirected.
+% %   \item
+% %     A topological self-stabilizing algorithm can never remove links:
+% %     it may happen that this link is the only link connecting two
+% %     otherwise disconnected components.
+% %     Clearly, once disconnected, connectivity can never be established
+% %     again.
+    
+% % \end{remarks}
+
+% % \begin{remarks}
+% % \item
+% %   Self-stabilizing algorithms can never assume a given state of
+% %   the stabilization has been reached, and based on this
+% %   assumption, move into a different mode of stabilization.
+% %   The problem is that this assumption can be violated anytime by
+% %   the adversary, ruining the invariant and hence correctness of
+% %   the stabilization algorithm
+% % \item
+% %   The \emph{transient} properties of the dynamic topology, i.e.,
+% %   the topological properties during convergence, may be
+% %   undesirable: even though the initial and the final peer degrees
+% %   may be low the intermediate clique topology has a linear degree
+% %   and hence does not scale.
+% % \end{remarks}
+
+
+
+
+
+
+
+% % % Designing a topological self-stabilizing algorithm is non-trivial for several 
+% % % reasons. In particular, as the time $t_0$ is not known to the self-stabilizing algorithm, the self-stabilizing procedure must run continuously, respectively, it is required that \emph{at least one peer notices (i.e., locally detects) an inconsistency}, if it exists: this peer can then trigger (local or global) convergence. 
+% % % Moreover, a key insight is that a topologically self-stabilizing algorithm can never remove links: it may happen that this link is the only link connecting two otherwise disconnected components. Clearly, once disconnected, connectivity can never be established again.
+% % % Now one may wonder how a self-stabilizing algorithm starting (at $t_0$) from a super-graph of the target topology will ever be able to reach the desired topology without edge deletion.  The answer is simple: while an edge cannot be removed, it can be \emph{moved} (e.g., one or both of its endpoints forwarded to neighboring peers), as well as  \emph{merged} (with parallel edges).
+
+% % % Another fundamental implication of self-stabilization algorithms is that these algorithms cannot cycle through multiple stages. For instance, it may be tempting to try to design an algorithm which, given the initial weakly connected topology, first converts the topology into a clique graph, a ``full-mesh''; once in the clique state, any desirable target topology can be achieved efficiently, simply be removing unnecessary links. 
+% % % The problem with this strategy is twofold:
+% % % \begin{enumerate} 
+% % % \item The strategy simply does not work. It is an inherent property of self-stabilizing algorithms that they can never assume a given stage of the stabilization has been reached, and based on this assumption, move into a different mode of stabilization. The problem is that this assumption can be violated anytime by the adversary, ruining the correctness of the stabilization algorithm. 
+% % %  \item The \emph{transient} properties of the resulting topology, i.e., the topological properties during convergence, may be undesirable: even though the initial and the final peer degrees may be low, the intermediate clique topology has a linear degree and hence does not scale. 
+% % % \end{enumerate} 
+
+% % Linearization is a most simple example for topological self-stabilization: 
+% % essentially, we are looking for a local-control strategy 
+% % for converting an arbitrary connected graph into a sorted list. 
+% % In order to provide some intuition and for the sake of simplicity, let us assume an undirected network topology, where peers have unique identifiers.
+% % In order to sort and linearize this overlay network in a distributed manner,
+% % two basic rules are sufficient, defined over node triples: 
+% % \begin{enumerate}
+% % \item \emph{Linearize right:} Any node $u$ which currently has two neighbors $v,w$ with larger IDs than its own ID, i.e., $u<v<w$, introduces these  two nodes to each other, essentially forwarding the edge. That is, the edge $\{u,w\}$ is forwarded from $u$ to $v$ and becomes
+% % edge $\{v,w\}$. 
+
+% % \item \emph{Linearize left:} Any node $w$ which currently has two neighbors $u,v$ with lower IDs than its own ID, i.e., $u<v<w$, introduces these  two nodes to each other, essentially forwarding the edge. That is, the edge $\{u,w\}$ is forwarded from $w$ to $v$ and becomes
+% % edge $\{u,v\}$. 
+% % \end{enumerate}
+
+% % Note that the algorithm indeed does not remove any edges,
+% % but only forward and merge them.
+% % Indeed, it is fairly easy to see that connectivity is preserved:
+% % if there is a path between $x$
+% % and $y$ at time $t$, then there also exists a path between
+% % the two nodes after the linearization step. 
+% % In order to prove that the algorithm will eventually converge,
+% % we can use a potential function argument.
+% % First however we note
+% % that if the network is in a configuration in which it does not
+% % constitute the linear chain graph yet, then there must exist a node having
+% % at least two left neighbors or at least two right neighbors. Accordingly, the
+% % linearize left or linearize right rule is enabled and will continue to change the
+% % topology in this step.
+% % Now, to show eventual convergence to the unique legal configuration (the linear
+% % graph), we will prove that after any execution of the linearize left or linearize
+% % right rule, the topology will come closer to the linearized configuration, in
+% % the following sense: We can define a potential function whose value is 
+% % (strictly) monotonically decreased with each executed rule.
+% % Consider the potential function that sums up the lengths (differences) 
+% % of all existing links with respect to the linear ordering of the nodes. 
+% % As the initial configuration is connected, this sum is at least $n-1$ 
+% % ($n-1$ links of length 1). 
+% % Whenever an action is executed (in our case: a linearization step is per-
+% % formed), the potential is reduced by at least the length of the shorter edge
+% % in the linearization triple. Thus, we 
+% % will eventually reach a topology of minimal potential, where all actions are disabled. 
+
+% % In general, the following metrics are most relevant in topological self-stabilization: 
+% % \begin{enumerate}
+% % \item \emph{Convergence Time:} Assuming a synchronous environment
+% % (or assuming an upper bound on the message transmission per link), 
+% % the distributed convergence time measures 
+% % how many (parallel) communication rounds are required until the final
+% % topology is reached. 
+
+% % \item \emph{Work:} The work measures how many
+% % edges are inserted, changed, or removed in total, during the covergence
+% % process. 
+
+% % \item \emph{Locality:} While a self-stabilizing algorithm by definition
+% % will re-establish a desired property from \emph{any} initial configuration,
+% % it is desirable that the parallel convergence time as well as the overall
+% % work is proportional to ``how far`` the initial topology is from the desired
+% % one. In particular, if there is only one or two links missing, or if there
+% % is a single peer which is not integrated well yet in the network,
+% % it should be possible to handle these situations  more efficiently
+% % than performing a complete stabilization.
+
+% % \item \emph{Transient Behavior:} While the initial and the final
+% % network topologies are given, it is desirable that during convergence, 
+% % only efficient topologies transiently emerge. For example, it may be
+% % desirable that no topology during convergence will have a higher degree
+% % or diameter than the initial or the final topology.
+% % \end{enumerate}
+
+% % The first self-stabilizing and scalable overlay network is SKIP$+$~\cite{jacm}, 
+% % a self-stabilizing variant of the skip graph family.
+% % Similarly to the original skip graphs, SKIP$+$ features a polylogarithmic
+% % degree and diameter. However, in constrast to the original skip graph version,
+% % SKIP$+$ contains additional edges which enable \emph{local detectability}:
+% % only with these edges it can be ensured that at least one peer will always notice,
+% % locally,
+% % if the overall network is not in the desired state yet.
+
+% % SKIP$+$ distinguishes between stable edges and temporary edges. 
+% % Similarly to the linearization example above, temporary edges
+% % will travel through the topology (i.e., they are forwarded),
+% % and eventually merge or stabilize. 
+% % Node $v$ considers an
+% % edge $(v,w)$ to be temporary if from v's point of view $(v,w)$ 
+% % does not belong to SKIP$+$ and
+% % so $v$ will try to forward it to some of its neighbors for which the edge would be more relevant.
+% % Otherwise, $v$ considers $(v,w)$ to be a stable edge and will make sure that the connection is bidirected,
+% % i.e., it will propose $(w, v)$ to $w$.
+
+% % Essentially, the self-stabilizing protocol for  SKIP$+$ is very simple:
+% % this is not surprising, given our discussion above. In particular,
+% % the peers in  SKIP$+$ continuously execute three rules:
+% % \begin{enumerate}
+% % \item \emph{Rule 1: Create Reverse Edges and
+% % Introduce Stable Edges.}  This rule makes sure that
+% % a directed edge becomes a bidirected edge, introducing
+% % the peers to each other. Also, stable edges are created
+% % where needed.
+
+% % \item \emph{Rule 2: Forward Temporary Edges.} 
+% % This rule is used for forwarding temporary edges to neighboring
+% % nodes. Eventually, the edges will stabilize or merge.
+
+% % \item \emph{Rule 3: Introduce All and Linearize.} 
+% % The rule has two parts. It performs 
+% % some kind of local transitive closure, where peers introduce
+% % all their neighbors to each other. Moreover,
+% % the rule is responsible for sorting neighboring nodes
+% % according to their identifiers. (In a skip graph, nodes
+% % are ordered on each level, facilitating search operations.)
+% % \end{enumerate}
+
+% % The three rules are continuously checked and executed 
+% % in parallel by all nodes. However, while the algorithm itself is simple, 
+% % its analysis is non-trivial.
+% % In a nutshell, the stabilization proof is based on the observation
+% % that the execution of the algorithm 
+% % can be divided into phases in which certain properties (milestones)
+% % are achieved. In particular, the execution can be divided
+% % into a bottom-up and a top-down phase.
+% % The bottom-up phase (i.e., from skip graph 
+% % level 0 upwards), connected components for increasingly larger prefixes
+% % are formed in the identifier space. 
+% % This will be accomplished by Rules 1 (where new nodes in the range
+% % of a node are discovered and where ranges may be refined) and Rules 3 (where an efficient
+% % variation of a local transitive closure is performed).
+% % Once the connected components are formed, in the second phase of the algorithm 
+% % (recall that the division into phases is a purely analytical one) will
+% % form a sorted list out of each prefix component. 
+% % This is accomplished in a top-down fashion by
+% % merging the two already sorted subcomponents into a sorted
+% % larger component until all
+% % nodes in the bottom level form a sorted list.
+
+% % In summary, Jacob et al.~show the following result.
+
+% % \begin{theorem}
+% % SKIP$+$ converges, for any initial state in which the nodes are weakly
+% % connected, in $O(\log^2 n)$ rounds. 
+% % A single join event (i.e., a new node connects to an arbitrary node in the system)
+% % or leave event (i.e., a node just leaves without prior notice) can be handled 
+% % with polylogarithmic work. 
+% % \end{theorem}
+
+% % One drawback of this approach however is its transient behavior:
+% % it may happen that node degrees can increase significantly during
+% % covergence (namely due to the Introduce All in Rule 3), 
+% % even though the initial and the final topology
+% % have low degrees, i.e., are scalable.
+
+% % In general, the field of topological self-stabilization is relatively young
+% % and many algorithmic techniques and limitations still 
+% % wait to be discovered.
+
+% % \section{Other related work}
+
+% % There is a wealth of literature on peer-to-peer systems, and papers on this
+% % subject can be found in every major computer science conference. Peer-to-peer
+% % overlay networks can be classified into three categories: social networks,
+% % random networks, and structured networks.
+
+% % Examples of social networks are Gnutella and KaZaA. Their basic idea of
+% % interconnecting peers is that connections follow the principle of highest
+% % benefit: a peer preferably connects to peers with similar interests by
+% % maintaining direct links to those peers that can successfully answer queries.
+
+% % An example for random networks is JXTA, a Java library developed by SUN to
+% % facilitate the development of peer-to-peer systems. The basic idea behind the
+% % JXTA core is to maintain a random-looking network between the peers. In this
+% % way, peers are very likely to stay in a single connected component because
+% % random graphs are known to be robust against even massive failures or
+% % departures of nodes. Recent theory work on random peer-to-peer networks can be
+% % found in~\cite{MS05,CDG05}.
+
+% % Most of the scientific work on peer-to-peer networks has focused on structured
+% % overlay networks, i.e., networks with a regular structure that makes it easy to
+% % route in them with low overhead. The vast majority of these networks is based
+% % on the concept of virtual space. The most prominent among these are Chord
+% % \cite{Chord}, CAN~\cite{CAN}, Pastry~\cite{Pastry} and Tapestry
+% % \cite{Tapestry}. The virtual space approach has the problem that it requires
+% % node labels to be evenly distributed in the space in order to obtain a scalable
+% % overlay network. Alternative approaches that yield scalable overlay networks
+% % for arbitrary distinct node labels are skip graphs~\cite{Aspnes2003}, skip nets
+% % \cite{HJSTW03} and the hyperring~\cite{AS04}.
+
+% % As we have already seen above, structured overlay networks are also known that
+% % can take locality into account. All of this work is based on the results in
+% % \cite{PlRR97, PlRR99}. The first peer-to-peer systems were
+% % Tapestry~\cite{Tapestry} and Pastry~\cite{Pastry}. Follow-up schemes addressed
+% % some of the shortcomings of the PRR scheme. In particular, the LAND
+% % scheme~\cite{AbMD04} improves the results in PRR as seen in the previous
+% % section; algorithms for efficiently handling peer arrival and departures are
+% % presented in~\cite{HildrumKMR04,HildrumKRZ02}; a simplified scheme with
+% % provable bounds for ring networks is given in~\cite{LiP02}; a fault-tolerant
+% % extension is given in~\cite{HildrumK03}; a scheme that addresses general
+% % networks, at the expense of an $O(\log n)$ stretch bound, is given
+% % in~\cite{RaRVV01}; a scheme that considers object location under more realistic
+% % networks is given in~\cite{HildrumKK04}; and a first attempt at designing
+% % overlay networks in peer-to-peer systems consisting of mobile peers is
+% % presented in~\cite{AbDM04} (no formal bounds are proven in~\cite{AbDM04} for
+% % any relevant network distribution though).
+
+% % Finally, overlay networks have not only been designed for wired networks but
+% % also for wireless networks. See, for example,~\cite{Sch05w} and the references
+% % therein for newest results in this area.
+
+
+\bibliographystyle{plainnat}
+% \bibliography{nsf, ./../bib_andrea}
+\bibliography{nsf}
+
+\end{document}
